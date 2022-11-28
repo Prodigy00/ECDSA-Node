@@ -1,7 +1,9 @@
 import { useState } from "react";
 import server from "./server";
+import { sign } from "./sign";
+import {toHex} from 'ethereum-cryptography/utils'
 
-function Transfer({ address, setBalance }) {
+function Transfer({ address, setBalance, msg, privateKey}) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
 
@@ -9,12 +11,13 @@ function Transfer({ address, setBalance }) {
 
   async function transfer(evt) {
     evt.preventDefault();
-
+    const [signature, recoveryBit] = await sign(msg,privateKey)
+    let hexAddr = toHex(signature)
     try {
       const {
         data: { balance },
       } = await server.post(`send`, {
-        sender: address,
+        sender: {address:hexAddr,recoveryBit},
         amount: parseInt(sendAmount),
         recipient,
       });

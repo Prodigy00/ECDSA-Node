@@ -1,13 +1,22 @@
 import server from "./server";
-
-function Wallet({ address, setAddress, balance, setBalance }) {
+import {toHex} from 'ethereum-cryptography/utils'
+import { sign } from "./sign";
+ 
+function Wallet({ address, setAddress, balance, setBalance, privateKey, setPrivateKey, msg }) {
   async function onChange(evt) {
-    const address = evt.target.value;
-    setAddress(address);
+    const privateKey = evt.target.value;
+    setPrivateKey(privateKey);
+
+    const [signature, recoveryBit] = await sign(msg,privateKey)
+    const address = toHex(signature)
+   
+    setAddress(address)
+
     if (address) {
+      let dt = JSON.stringify({address,recoveryBit})
       const {
         data: { balance },
-      } = await server.get(`balance/${address}`);
+      } = await server.get(`balance/${dt}`);
       setBalance(balance);
     } else {
       setBalance(0);
@@ -18,11 +27,14 @@ function Wallet({ address, setAddress, balance, setBalance }) {
     <div className="container wallet">
       <h1>Your Wallet</h1>
 
+      <div className="warning">Note: Never share your private key with any web3 site! This is for educational purposes only, to demonstrate public key cryptography.</div>
       <label>
-        Wallet Address
-        <input placeholder="Type an address, for example: 0x1" value={address} onChange={onChange}></input>
+        Private Key
+        <input placeholder="Type a private key, for example: b3ba..." value={privateKey} onChange={onChange}></input>
       </label>
-
+      <div>
+        Address:{address.slice(0,10)}...
+      </div>
       <div className="balance">Balance: {balance}</div>
     </div>
   );
